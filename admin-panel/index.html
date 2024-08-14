@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Suggestions</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <h2>Admin Login</h2>
+            <input type="email" id="emailInput" placeholder="Email">
+            <input type="password" id="passwordInput" placeholder="Password">
+            <button type="button" id="loginButton">Login</button>
+            <p id="loginError"></p> 
+        </div>
+    </div>
+
+    <div id="appContent" class="container" style="display:none;"> 
+        <h1>Word Suggestions</h1>
+        <button type="button" id="logoutButton">Logout</button>
+        <form id="suggestionForm">
+            </form>
+        <ul id="suggestionList"></ul>
+
+        <input type="file" id="importFileInput" accept=".txt" style="display: none;"> 
+        <button type="button" id="importButton">Import Words</button>
+
+        <div id="progressBarContainer" style="display:none;"> 
+            <progress id="progressBar" value="0" max="100"></progress>
+            <span id="progressText">0%</span> 
+        </div>
+
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="config.js" type="module"></script>
+    <script src="app.js" type="module"></script>
+</body>
+</html>
