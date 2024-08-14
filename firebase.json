@@ -1,0 +1,22 @@
+{
+  "hosting": [
+    {
+      "target": "gamoitsani-admin-panel", 
+      "public": "admin-panel",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ]
+    },
+    {
+      "target": "gamoitsani-info", 
+      "public": "info",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ]
+    }
+  ]
+}

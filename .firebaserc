@@ -1,0 +1,19 @@
+{
+  "projects": {
+    "default": "gamoitsani-26"
+  },
+  "targets": {
+    "gamoitsani-26": {
+      "hosting": {
+        "gamoitsani-admin-panel": [
+          "gamoitsani-26"
+        ],
+        "gamoitsani-info": [
+          "gamoitsani-info"
+        ]
+      }
+    }
+  },
+  "etags": {},
+  "dataconnectEmulatorConfig": {}
+}
