@@ -110,7 +110,6 @@ body {
   width: 50%;
   min-width: 200px;
   height: 100vh;
-  background-color: red;
   transition: transform 0.3s ease;
   transform: translateX(100%);
   background-color: #311e77;
@@ -220,8 +219,58 @@ body {
 .button:hover {
   background-color: #2c3981;
 }
+.info{
+  width: 100%;
+  max-width: 1500px;
+  margin-top: 80px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.info-inner{
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+  align-items: center;
+}
+.box{
+  margin-bottom: 30px;
+  width: 100%;
+  min-height: 300px;
+  background-color: #311e77;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+.box-img{
+  width: 15%;
+  margin-bottom: 20px;
+  animation: rotate 50s linear infinite;
+}
+.box-header{
+  margin-bottom: 20px;
+}
+.box-description{
+  width: 90%;
+}
 
 @media (min-width: 768px) {
+  .info{
+    width: 90%;
+  }
+  .info-inner{
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .box{
+    width: 27%;
+  }
   .main{
     width: 90%;
   }
@@ -302,5 +351,14 @@ body {
   }
   100% {
     transform: translateX(calc(100vw - 50px)) translateY(calc(100vh - 50px));
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
