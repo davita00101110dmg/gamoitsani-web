@@ -1,76 +1,176 @@
 @font-face {
-    font-family: 'Mersad';
-    src: url('./assets/fonts/Mersad\ Bold.ttf') format('truetype');
-    font-weight: bold;
-    font-style: normal;
+  font-family: "Mersad";
+  src: url("./assets/fonts/Mersad\ Bold.ttf") format("truetype");
+  font-weight: bold;
+  font-style: normal;
 }
 
 html {
-    overflow-x: hidden;
+  overflow-x: hidden;
 }
 body {
-    font-family: 'Mersad', sans-serif;
-    margin: 0;
-    padding: 0;
-    background: linear-gradient(to right, #001242 0%, #23176C 50%, #4D2E8D 100%);
-    min-height: 100vh;
-    overflow: hidden;
+  font-family: "Mersad", sans-serif;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(to right, #001242 0%, #23176c 50%, #4d2e8d 100%);
+  min-height: 100vh;
+  overflow: hidden;
 }
-.container{
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: start;
+}
+
+.header {
+  width: 100%;
+  min-height: 80px;
+  background-color: #011243;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.header-inner {
+  width: 90%;
+  max-width: 1500px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.header-center {
+  display: none;
+}
+.header-right {
+  display: none;
+}
+
+.logo {
+  width: 70px;
+  height: auto;
+}
+.nav-link {
+  margin: 0 10px;
+  color: white;
+  text-decoration: none;
+  font-size: 16px;
+}
+.button {
+  min-width: 100px;
+  height: 40px;
+  background-color: blue;
+  color: white;
+  border-radius: 50px;
+  border: none;
+  padding: 0 20px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  font-family: "Mersad", sans-serif;
+  cursor: pointer;
+  background-color: #4756a6;
+  transition: background-color 0.3s ease;
+  font-size: 16px;
+}
+.button:hover {
+  background-color: #2c3981;
+}
+
+/* burgermenu */
+.burger-menu {
+  display: flex;
+  justify-content: center;
+  align-items: start;
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 50%;
+  min-width: 200px;
+  height: 100vh;
+  background-color: red;
+  transition: transform 0.3s ease;
+  transform: translateX(100%);
+  background-color: #4c2d8c;
+}
+.burger-menu.active {
+  transform: translateX(0);
+}
+.burger-menu.unactive {
+  right: -50%;
+  transform: translateX(100%);
+}
+.burger-menu-inner {
+  width: 90%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+  align-items: center;
+}
+.burger-menu-close {
+  padding: 10px;
+  cursor: pointer;
+}
+.burger-menu-close-img {
+  width: 30px;
+  height: 30px;
+}
+.burger-menu-icon-img {
+  width: 30px;
+  height: 30px;
+}
+.burger-menu-icon {
+  display: flex;
+  cursor: pointer;
+}
+
+@media (min-width: 768px) {
+  .burger-menu-icon {
+    display: none;
+  }
+  .container {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: start;
-}
+  }
 
-
-.header{
+  .header {
     width: 100%;
     min-height: 80px;
     background-color: #011243;
     display: flex;
     justify-content: center;
     align-items: center;
-    
-}
-.header-inner{
+  }
+  .header-inner {
     width: 90%;
     max-width: 1500px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-}
-.header-center{
+  }
+  .header-center {
     display: flex;
     justify-content: space-between;
     align-items: center;
-}
-.logo{
+  }
+  .header-right {
+    display: flex;
+  }
+  .burger-menu {
+    display: none;
+  }
+  .logo {
     width: 70px;
     height: auto;
-}
-.nav-link{
+  }
+  .nav-link {
     margin: 0 10px;
     color: white;
     text-decoration: none;
+  }
 }
-.button{
-    min-width: 100px;
-    height: 40px;
-    background-color: blue;
-    color: white;
-    border-radius: 50px;
-    border: none;
-    padding: 0 20px;
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    font-family: 'Mersad', sans-serif;
-    cursor: pointer;
-    background-color: #4756A6;
-    transition: background-color 0.3s ease;
-}
-.button:hover{
-    background-color: #2c3981;
 
+@media (min-width: 1200px) {
 }

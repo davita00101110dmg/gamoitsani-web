@@ -1,39 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gamoitsani</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" href="assets/favicon.png" type="image/png">
-</head>
-<body>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="icon" href="assets/favicon.png" type="image/png" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+  </head>
+  <body>
     <div class="container">
-        <header class="header">
-            <div class="header-inner">
-                <div class="header-left">
-                    <a href="/">
-                        <img class="logo" src="assets/Logo.png" alt="Site Logo">
-                    </a>
-                </div>
-                <nav class="header-center">
-                    <a href="/" class="nav-link">Home</a>
-                    <a href="/about" class="nav-link">About</a>
-                    <a href="/contact" class="nav-link">Contact</a>
-                </nav>
-                <div class="header-right">
-                    <a href="https://apps.apple.com/ge/app/gamoitsani/id6502697351" target="_blank" rel="noopener noreferrer">
-                        <button class="button" type="button">Download</button>
-                    </a>
-                </div>
+      <header class="header">
+        <div class="header-inner">
+          <div class="header-left">
+            <a href="/">
+              <img class="logo" src="assets/Logo.png" alt="Site Logo" />
+            </a>
+          </div>
+          <nav class="header-center">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/about" class="nav-link">About</a>
+            <a href="/contact" class="nav-link">Contact</a>
+          </nav>
+          <div class="header-right">
+            <a
+              href="https://apps.apple.com/ge/app/gamoitsani/id6502697351"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <button class="button" type="button">Download</button>
+            </a>
+          </div>
+          <div class="burger-menu-icon" onClick="toggleBurgerMenu">
+            <img src="./assets/BurgerMenu.png" class="burger-menu-icon-img" />
+          </div>
+          <div class="burger-menu">
+            <div class="burger-menu-close" onClick="toggleBurgerMenu">
+              <img
+                class="burger-menu-close-img"
+                src="./assets/BurgerClose.png"
+              />
             </div>
-        </header>
-        <main>
-            <h1>wkjebwekgbkejgbwk</h1>
-
-        </main>
+            <div class="burger-menu-inner">
+              <a href="/" class="nav-link">Home</a>
+              <a href="/about" class="nav-link">About</a>
+              <a href="/contact" class="nav-link">Contact</a>
+            </div>
+          </div>
+        </div>
+      </header>
+      <main>
+        <h1>wkjebwekgbkejgbwk</h1>
+      </main>
     </div>
 
     <script src="app.js"></script>
-</body>
+  </body>
 </html>
