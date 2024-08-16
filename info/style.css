@@ -1,89 +1,19 @@
 html {
     overflow-x: hidden;
 }
-
 body {
-    font-family: 'Mersad', sans-serif; /* Use the custom font */
+    font-family: 'Mersad', sans-serif;
     margin: 0;
     padding: 0;
-    background: linear-gradient(to right, #001242 0%, #23176C 50%, #4D2E8D 100%); /* Linear gradient background */
-    min-height: 100vh; /* Ensure background covers the entire viewport height */
-    display: flex;     /* Use flexbox for layout */
+    background: linear-gradient(to right, #001242 0%, #23176C 50%, #4D2E8D 100%);
+    min-height: 100vh;
+    overflow: hidden;
+}
+.container{
+    display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden; /* Hide overflow for bounce effect */
-    position: relative; /* Necessary for absolute positioning of question marks */
-
 }
-
-.container {
-    background-color: #ffffff;
-    padding: 40px;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
-h1 {
-    text-align: center;
-    margin-bottom: 30px;
-    font-size: 2.5em; /* Larger title size */
-    user-select: none;
-    pointer-events: none; 
-}
-
-.button-bar {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-}
-
-button {
-    margin: 0 10px; 
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-family: 'Mersad', sans-serif; 
-    background-color: #4756A6; 
-    color: white;
-}
-
-button:hover {
-    color: white; 
-    opacity: 70%;
-}
-
-.button-bar a {
-    display: inline-block; 
-    text-decoration: none; 
-    color: inherit; 
-}
-
-.question-mark {
-    font-family: "Irish Grover";
-    position: absolute;
-    font-size: 70px;
-    color: white;
-    user-select: none;
-    pointer-events: none; 
-    z-index: -1;
-    animation: moveRandomly 15s linear infinite, slowRotate 10s linear infinite;
-}
-
-@keyframes moveRandomly {
-    0% { top: var(--start-top); left: var(--start-left); }
-    25% { top: calc(var(--start-top) + (25vh * (var(--random-direction-y) * 2 - 1))); left: calc(var(--start-left) + (25vw * (var(--random-direction-x) * 2 - 1))); }
-    50% { top: calc(var(--start-top) + (50vh * (var(--random-direction-y) * 2 - 1))); left: calc(var(--start-left) + (50vw * (var(--random-direction-x) * 2 - 1))); }
-    75% { top: calc(var(--start-top) + (25vh * (var(--random-direction-y) * 2 - 1))); left: calc(var(--start-left) + (25vw * (var(--random-direction-x) * 2 - 1))); }
-    100% { top: calc(var(--start-top) + (0vh * (var(--random-direction-y) * 2 - 1))); left: calc(var(--start-left) + (0vw * (var(--random-direction-x) * 2 - 1))); }
-
-}
-
-@keyframes slowRotate {
-    from { 
-        transform: rotate(0deg); 
-    }
-    to { 
-        transform: rotate(360deg);
-    }
+.container-inner{
+    width: 90%;
 }
