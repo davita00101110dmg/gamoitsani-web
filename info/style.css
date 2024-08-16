@@ -19,6 +19,7 @@ body {
   overflow: hidden;
   color: white;
   z-index: 1;
+  line-height: 1.4;
 }
 * {
   margin: 0;
@@ -135,8 +136,9 @@ body {
   width: 15px;
 }
 .main {
-  margin-top: 100px;
+  margin-top: 80px;
   width: 100%;
+  max-width: 1500px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -220,6 +222,30 @@ body {
 }
 
 @media (min-width: 768px) {
+  .main{
+    width: 90%;
+  }
+  .main-inner{
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .main-left{
+    align-items: start;
+    padding-right: 50px;
+    width: 60%;
+  }
+  .main-right{
+    margin-top: 0;
+    width: 40%;
+  }
+  .main-description{
+    width: 70%;
+  }
+  .main-left-texts{
+    text-align: start;
+  }
   .burger-menu-icon {
     display: none;
   }
