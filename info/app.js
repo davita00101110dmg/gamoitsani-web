@@ -13,7 +13,7 @@ document
   .addEventListener("click", toggleBurgerMenu);
 document.querySelector(".overlay").addEventListener("click", toggleBurgerMenu);
 
-// animation
+// animation ???
 
 function createQuestionMarks() {
   const container = document.querySelector(".background-container");
@@ -35,3 +35,20 @@ function createQuestionMarks() {
 }
 
 createQuestionMarks();
+
+
+// faq
+
+document.addEventListener('DOMContentLoaded', function () {
+  const faqItems = document.querySelectorAll('.faq-item');
+
+  faqItems.forEach(item => {
+    item.querySelector('.faq-question').addEventListener('click', function () {
+      const isOpen = item.classList.contains('open');
+      faqItems.forEach(i => i.classList.remove('open'));
+      if (!isOpen) {
+        item.classList.add('open');
+      }
+    });
+  });
+});
