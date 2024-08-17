@@ -351,6 +351,39 @@ body {
   padding: 15px;
 }
 
+.footer{
+  margin-top: 80px;
+  width: 100%;
+  height: 120px;
+  background-color: #001242;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.footer-icon{
+  width: 30px;
+  height: auto;
+  margin-left: 20px;
+}
+.footer-inner{
+  width: 90%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+}
+.footer-left-img{
+  width: 70px;
+  height: auto;
+}
+.line {
+  height: 1px;
+  background-color: white;
+  border: none;
+  margin: 20px 0;
+  width: 100%;
+}
+
 @media (min-width: 768px) {
   .faq{
     width: 90%;
