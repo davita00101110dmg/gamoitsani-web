@@ -1,24 +1,264 @@
 <!DOCTYPE html>
-<html>
-<head>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gamoitsani</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" href="assets/favicon.png">
-</head>
-<body>
-    <div class="container">
-        <div class="button-bar">
-            <a href="https://www.linkedin.com/in/davitikhvedelidze/" target="_blank">
-                <button class="contact-button">Contact</button>
-            </a>
-            <a href="https://apps.apple.com/ge/app/gamoitsani/id6502697351" target="_blank" >
-                <button class="app-store-button">App Store</button>
-            </a>
-        </div>
-        <h1>Gamoitsani</h1>
+    <link rel="stylesheet" href="style.css?v=1.0" />
+    <link rel="icon" href="assets/favicon.png" type="image/png" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div class="background-container">
+      <img class="question-mark" src="./assets/Question.png" />
     </div>
+    <div class="container">
+      <header class="header">
+        <div class="header-inner">
+          <div class="header-left">
+            <a href="/">
+              <img class="logo" src="assets/Logo.png" alt="Site Logo" />
+            </a>
+          </div>
 
-    <script src="app.js"></script> </body>
-
-</body>
+          <nav class="header-center">
+            <a href="#main" class="nav-link" data-en="Home" data-ge="მთავარი">Home</a>
+            <a href="#faq" class="nav-link" data-en="FAQ" data-ge="კითხვები">FAQ</a>
+            <a href="#contact" class="nav-link" data-en="Contact" data-ge="კონტაქტი">Contact</a>
+          </nav>
+          <div class="header-right">
+            <a
+              href="https://www.linkedin.com/in/davitikhvedelidze/?originalSubdomain=ge"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <button class="button" type="button" data-en="Developer" data-ge="დეველოპერი">
+                <img
+                  class="button-img-creator"
+                  src="./assets/Developer.png"
+                />Developer
+              </button>
+            </a>
+            <div class="language-toggle">
+              <img src="./assets/georgian.png" alt="Georgian" id="toggle-ge" class="language-icon" onclick="switchLanguage('ge')" />
+              <img src="./assets/usa.png" alt="English" id="toggle-en" class="language-icon" onclick="switchLanguage('en')" />
+            </div>   
+          </div>
+          
+          <div class="burger-menu-icon" onClick="toggleBurgerMenu">
+            <img src="./assets/BurgerMenu.png" class="burger-menu-icon-img" />
+          </div>
+          <div class="burger-menu">
+            <div class="burger-menu-close" onClick="toggleBurgerMenu">
+              <img
+                class="burger-menu-close-img"
+                src="./assets/BurgerClose.png"
+              />
+            </div>
+            <div class="burger-menu-inner">
+              <div class="nav-menu">
+                <a href="#main" class="nav-link" data-en="Home" data-ge="მთავარი">Home</a>
+                <a href="#faq" class="nav-link" data-en="FAQ" data-ge="კითხვები">FAQ</a>
+                <a href="#contact" class="nav-link" data-en="Contact" data-ge="კონტაქტი">Contact</a>
+                <div class="language-toggle">
+                  <img src="./assets/georgian.png" alt="Georgian" id="toggle-ge" class="language-icon" onclick="switchLanguage('ge')" />
+                  <img src="./assets/usa.png" alt="English" id="toggle-en" class="language-icon" onclick="switchLanguage('en')" />
+                </div>   
+              </div>           
+              <a
+                href="https://www.linkedin.com/in/davitikhvedelidze/?originalSubdomain=ge"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <button class="button button-burger" type="button" data-en="Developer" data-ge="დეველოპერი">
+                  <img
+                    class="button-img-creator"
+                    src="./assets/Developer.png"
+                  />Developer
+                </button>
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+      <main id="main" class="main">
+        <div class="main-inner">
+          <div class="main-left">
+            <div class="main-left-texts">
+              <h1 class="main-header" data-en="App For Gaming" data-ge="აპლიკაცია თამაშებისთვის">App For Gaming</h1>
+              <p class="main-description" data-en="The first app for fitness, auto, business, watching videos, ordering cabs, ordering food, dating, gaming, art, finding books and... everything else!" data-ge="პირველი აპლიკაცია ფიტნესისთვის, ავტო, ბიზნესი, ვიდეოს ყურება, ტაქსების შეკვეთა, საკვების შეკვეთა, გაცნობა, თამაშები, ხელოვნება, წიგნების პოვნა და... ყველაფერი სხვა!" >
+                The first app for fitness, auto, business, watching videos,
+                ordering cabs, ordering food, dating, gaming, art, finding books
+                and... everything else!
+              </p>
+            </div>
+            <a
+              href="https://apps.apple.com/ge/app/gamoitsani/id6502697351"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <button class="button" data-en="Apple Store" data-ge="ეფლ სთორი">
+                <img class="button-img" src="./assets/Apple.svg" />Apple Store
+              </button>
+            </a>
+          </div>
+          <div class="main-right">
+            <img class="main-right-img" src="./assets/Main.png" />
+          </div>
+        </div>
+      </main>
+      <div class="info">
+        <div class="info-inner">
+          <div class="box">
+            <img class="box-img" src="./assets/Question.png" />
+            <h2 class="box-header" data-en="Hello World" data-ge="სალამი">Hello World</h2>
+            <p class="box-description" data-en="The first app for fitness, auto, art, finding books The first app for fitness, auto, art, finding books and... everything else!" data-ge="პირველი აპლიკაცია ფიტნესისთვის, ავტო, ხელოვნება, წიგნების პოვნა პირველი პოვნა და... ყველაფერი სხვა!">
+              The first app for fitness, auto, art, finding books The first app
+              for fitness, auto, art, finding books and... everything else!
+            </p>
+          </div>
+          <div class="box">
+            <img class="box-img" src="./assets/Question.png" />
+            <h2 class="box-header" data-en="Hello World" data-ge="სალამი">Hello World</h2>
+            <p class="box-description" data-en="The first app for fitness, auto, art, finding books The first app for fitness, auto, art, finding books and... everything else!" data-ge="პირველი აპლიკაცია ფიტნესისთვის, ავტო, ხელოვნება, წიგნების პოვნა პირველი პოვნა და... ყველაფერი სხვა!">
+              The first app for fitness, auto, art, finding books The first app
+              for fitness, auto, art, finding books and... everything else!
+            </p>
+          </div>
+          <div class="box">
+            <img class="box-img" src="./assets/Question.png" />
+            <h2 class="box-header" data-en="Hello World" data-ge="სალამი">Hello World</h2>
+            <p class="box-description" data-en="The first app for fitness, auto, art, finding books The first app for fitness, auto, art, finding books and... everything else!" data-ge="პირველი აპლიკაცია ფიტნესისთვის, ავტო, ხელოვნება, წიგნების პოვნა პირველი პოვნა და... ყველაფერი სხვა!">
+              The first app for fitness, auto, art, finding books The first app
+              for fitness, auto, art, finding books and... everything else!
+            </p>
+          </div>
+        </div>
+      </div>
+      <div id="faq" class="faq">
+        <div class="faq-inner">
+          <h1 class="faq-header" data-en="Frequently Asked Questions" data-ge="ხშირად დასმული კითხვები">Frequently Asked Questions</h1>
+          <div class="faq-item">
+            <div class="faq-question" data-en="What is Gamoitsani?" data-ge="რა არის გამოიცანი?">What is Gamoitsani?</div>
+            <div class="faq-answer" data-en="Gamoitsani is a versatile app designed for various needs including fitness, auto, business, and more." data-ge="გამოიცანი არის მრავალფეროვანი აპლიკაცია, რომელიც შექმნილია სხვადასხვა საჭიროებებისათვის, მათ შორის ფიტნესისთვის, ავტო, ბიზნესისთვის და სხვ." >
+              Gamoitsani is a versatile app designed for various needs including
+              fitness, auto, business, and more.
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question" data-en="What is Gamoitsani?" data-ge="რა არის გამოიცანი?">What is Gamoitsani?</div>
+            <div class="faq-answer" data-en="Gamoitsani is a versatile app designed for various needs including fitness, auto, business, and more." data-ge="გამოიცანი არის მრავალფეროვანი აპლიკაცია, რომელიც შექმნილია სხვადასხვა საჭიროებებისათვის, მათ შორის ფიტნესისთვის, ავტო, ბიზნესისთვის და სხვ." >
+              Gamoitsani is a versatile app designed for various needs including
+              fitness, auto, business, and more.
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question" data-en="What is Gamoitsani?" data-ge="რა არის გამოიცანი?">What is Gamoitsani?</div>
+            <div class="faq-answer" data-en="Gamoitsani is a versatile app designed for various needs including fitness, auto, business, and more." data-ge="გამოიცანი არის მრავალფეროვანი აპლიკაცია, რომელიც შექმნილია სხვადასხვა საჭიროებებისათვის, მათ შორის ფიტნესისთვის, ავტო, ბიზნესისთვის და სხვ." >
+              Gamoitsani is a versatile app designed for various needs including
+              fitness, auto, business, and more.
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question" data-en="What is Gamoitsani?" data-ge="რა არის გამოიცანი?">What is Gamoitsani?</div>
+            <div class="faq-answer" data-en="Gamoitsani is a versatile app designed for various needs including fitness, auto, business, and more." data-ge="გამოიცანი არის მრავალფეროვანი აპლიკაცია, რომელიც შექმნილია სხვადასხვა საჭიროებებისათვის, მათ შორის ფიტნესისთვის, ავტო, ბიზნესისთვის და სხვ." >
+              Gamoitsani is a versatile app designed for various needs including
+              fitness, auto, business, and more.
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question" data-en="What is Gamoitsani?" data-ge="რა არის გამოიცანი?">What is Gamoitsani?</div>
+            <div class="faq-answer" data-en="Gamoitsani is a versatile app designed for various needs including fitness, auto, business, and more." data-ge="გამოიცანი არის მრავალფეროვანი აპლიკაცია, რომელიც შექმნილია სხვადასხვა საჭიროებებისათვის, მათ შორის ფიტნესისთვის, ავტო, ბიზნესისთვის და სხვ." >
+              Gamoitsani is a versatile app designed for various needs including
+              fitness, auto, business, and more.
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question" data-en="What is Gamoitsani?" data-ge="რა არის გამოიცანი?">What is Gamoitsani?</div>
+            <div class="faq-answer" data-en="Gamoitsani is a versatile app designed for various needs including fitness, auto, business, and more." data-ge="გამოიცანი არის მრავალფეროვანი აპლიკაცია, რომელიც შექმნილია სხვადასხვა საჭიროებებისათვის, მათ შორის ფიტნესისთვის, ავტო, ბიზნესისთვის და სხვ." >
+              Gamoitsani is a versatile app designed for various needs including
+              fitness, auto, business, and more.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="download">
+        <div class="download-inner">
+          <div class="download-left">
+            <p class="download-bifheader" data-en="Download our app" data-ge="გაააჩინეთ ჩვენი აპლიკაცია">Download our app</p>
+            <h1 class="download-header" data-en="Get App Easily" data-ge="აპლიკაციის მარტივად მიღება">Get App Easily</h1>
+            <p class="download-description" data-en="Get the Gaming App More Easily Get the Gaming App More Easily Get the Gaming App More Easily Get the Gaming App More Easily Get the Gaming App More Easily Get the Gaming App More Easily" data-ge="მიიღეთ თამაშის აპლიკაცია მარტივად მიიღეთ თამაშის აპლიკაცია მარტივად მიიღეთ თამაშის აპლიკაცია მარტივად მიიღეთ თამაშის აპლიკაცია მარტივად მიიღეთ თამაშის აპლიკაცია მარტივად მიიღეთ თამაშის აპლიკაცია მარტივად">Get the Gaming App More Easily Get the Gaming App More Easily Get the Gaming App More Easily Get the Gaming App More Easily Get the Gaming App More Easily Get the Gaming App More Easily</p>
+            <div class="buttons">
+              <a
+                href="https://apps.apple.com/ge/app/gamoitsani/id6502697351"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <button class="button download-button" data-en="Download" data-ge="გადმოწერა">
+                  <img class="button-img" src="./assets/Apple.svg" alt="Apple Store" />Download
+                </button>
+              </a>
+              <a
+                href="https://www.linkedin.com/in/davitikhvedelidze/?originalSubdomain=ge"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <button class="button" type="button" data-en="Developer" data-ge="დეველოპერი">
+                  <img
+                    class="button-img-creator"
+                    src="./assets/Developer.png"
+                    alt="Developer"
+                  />Developer
+                </button>
+              </a>
+            </div>
+          </div>
+          <div class="download-right">
+            <img src="./assets/Logo-crop.png" class="download-img" alt="App Logo" />
+          </div>
+        </div>
+      </div>
+      <div class="footer">
+        <div class="footer-inner">
+          <div class="footer-left">
+            <img class="footer-left-img" src="./assets/Logo.png" alt="Site Logo" />
+          </div>
+          <div id="contact" class="footer-right">
+            <a
+              href="https://www.linkedin.com/in/davitikhvedelidze/?originalSubdomain=ge"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <img
+                src="assets/linkedin.png"
+                alt="LinkedIn"
+                class="footer-icon"
+                data-en="LinkedIn"
+                data-ge="ლინკდინი"
+              />
+            </a>
+            <a
+              href="https://www.instagram.com/datokhvedelidzee/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <img
+                src="assets/instagram.png"
+                alt="Instagram"
+                class="footer-icon"
+                data-en="Instagram"
+                data-ge="ინსტაგრამი"
+              />
+            </a>
+          </div>
+        </div>
+      </div>
+            
+    </div>
+    <div class="overlay"></div>
+    <script src="app.js?v=1.0"></script>
+  </body>
 </html>
