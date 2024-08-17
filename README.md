@@ -5,7 +5,7 @@ This project hosts two separate websites related to the [Gamoitsani](https://app
 1. **Info Page**
 2. **Admin Panel**
 
-<img width="1840" alt="image" src="https://github.com/user-attachments/assets/e983f093-a1c4-4197-886d-df0cafd12139">
+<img width="1840" alt="image" src="https://github.com/user-attachments/assets/d43d62fa-5aa6-4008-8d97-6bfd93b2a3ec">
 <img width="1840" alt="image" src="https://github.com/user-attachments/assets/5a5d5357-9361-4373-8a3c-209090137387">
 
 ## Contact
