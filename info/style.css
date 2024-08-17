@@ -108,7 +108,7 @@ body {
   top: 0;
   right: 0;
   width: 50%;
-  min-width: 200px;
+  min-width: 240px;
   height: 100vh;
   transition: transform 0.3s ease;
   transform: translateX(100%);
@@ -182,7 +182,7 @@ body {
 .nav-menu {
   margin-top: 100px;
   width: 100%;
-  height: 150px;
+  height: 200px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -373,7 +373,13 @@ body {
   align-items: center;
 
 }
+.language-toggle{
+}
 .language-icon{
+  cursor: pointer;
+  margin-left: 5px;
+  border: 1.5px solid #ffffff;
+  border-radius: 50px;
   width: 30px;
 }
 .footer-left-img{
@@ -389,6 +395,12 @@ body {
 }
 
 @media (min-width: 768px) {
+  .language-toggle{
+    margin-left: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
   .footer{
     width: 100%;
   }
