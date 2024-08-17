@@ -366,6 +366,7 @@ body {
   margin-left: 20px;
 }
 .footer-inner{
+  max-width: 1500px;
   width: 90%;
   display: flex;
   justify-content: space-between;
@@ -385,6 +386,12 @@ body {
 }
 
 @media (min-width: 768px) {
+  .footer{
+    width: 100%;
+  }
+  .footer-inner{
+    width: 90%;
+  }
   .faq{
     width: 90%;
   }
