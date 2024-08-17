@@ -30,7 +30,7 @@ body {
   top: 0;
   left: 0;
   width: 100%;
-  height: 100vh;
+  height: 1400px;
   z-index: -2;
   overflow: hidden;
 }
@@ -129,10 +129,18 @@ body {
   justify-content: start;
   align-items: center;
 }
+.button-burger{
+  margin-top: 80px;
+}
 .button-img {
   margin-right: 8px;
   margin-bottom: 3px;
   width: 15px;
+}
+.button-img-creator{
+  margin-right: 8px;
+  margin-bottom: 3px;
+  width: 18px;
 }
 .main {
   margin-top: 80px;
@@ -257,8 +265,84 @@ body {
 .box-description{
   width: 90%;
 }
-
+.download{
+  margin-top: 80px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.download-inner{
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+  align-items: center;
+}
+.download-left{
+  text-align: center;
+}
+.downlad-bifheader{
+  margin-bottom: 20px;
+  display: none;
+}
+.download-right{
+  display: none;
+}
+.download-header{
+  margin-bottom: 20px;
+}
+.download-description{
+  margin-bottom: 20px;
+}
+.download-button{
+  margin-right: 10px;
+}
+.buttons{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  min-height: 110px;
+  margin-bottom: 20px;
+}
 @media (min-width: 768px) {
+  .download-description{
+    padding-left: 30px;
+  }
+  .download-img{
+    width: 80%;
+  }
+  .buttons{
+    justify-content: end;
+  }
+  .download-left{
+    width: 60%;
+    min-width: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: end;
+    text-align: end;
+  }
+  .download{
+    width: 90%;
+    max-width: 1500px;
+  }
+  .download-inner{
+    width: 100%;
+    flex-direction: row-reverse;
+  }
+  .downlad-bifheader{
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: end;
+  }
+  .download-right{
+  width: 40%;
+  display: flex;
+  justify-content: start;
+  align-items: center;
+  }
   .info{
     width: 90%;
   }

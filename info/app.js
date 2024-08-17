@@ -17,7 +17,7 @@ document.querySelector(".overlay").addEventListener("click", toggleBurgerMenu);
 
 function createQuestionMarks() {
   const container = document.querySelector(".background-container");
-  const numberOfMarks = 50;
+  const numberOfMarks = 100;
 
   for (let i = 0; i < numberOfMarks; i++) {
     const questionMark = document.createElement("div");
