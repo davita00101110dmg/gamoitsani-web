@@ -373,6 +373,9 @@ body {
   align-items: center;
 
 }
+.language-icon{
+  width: 30px;
+}
 .footer-left-img{
   width: 70px;
   height: auto;

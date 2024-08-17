@@ -52,3 +52,27 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 });
+
+
+
+// language toggle
+
+
+function switchLanguage(language) {
+  const geElements = document.querySelectorAll('[data-ge]');
+  
+  geElements.forEach(el => {
+    if (language === 'ge') {
+      const imgElement = el.querySelector('img');
+      const imgHTML = imgElement ? imgElement.outerHTML : '';
+      const text = el.getAttribute('data-ge');
+      el.innerHTML = imgHTML + text;
+    } else if (language === 'en') {
+      const imgElement = el.querySelector('img');
+      const imgHTML = imgElement ? imgElement.outerHTML : '';
+      const text = el.getAttribute('data-en');
+      el.innerHTML = imgHTML + text;
+    }
+  });
+}
+
