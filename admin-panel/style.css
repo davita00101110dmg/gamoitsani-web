@@ -6,7 +6,7 @@ body {
 }
 
 .container {
-    max-width: 800px;
+    max-width: 1200px;
     margin: 0 auto;
     background-color: #ffffff;
     padding: 20px;
@@ -26,47 +26,87 @@ ul {
 
 li {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    justify-content: space-between; 
-    padding: 10px;
+    padding: 15px;
     border-bottom: 1px solid #ddd;
+    margin-bottom: 10px;
 }
 
 li:last-child {
     border-bottom: none;
 }
 
-.word {
-    flex-grow: 1;
-    margin-right: 20px;
+.base-word {
+    flex: 1;
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-right: 15px;
+}
+
+.center-column {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    margin-right: 15px;
+}
+
+.translations, .categories {
+    margin: 5px 0;
+    padding: 5px;
+    background-color: #f9f9f9;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+
+.button-container {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 0 0 auto;
 }
 
 button {
-    margin-left: auto;
-    padding: 8px 15px; 
+    padding: 8px 15px;
     color: white;
     border: none;
     border-radius: 3px;
     cursor: pointer;
+    font-size: 0.9em;
+    width: 100px;
 }
 
 .add-button {
-    background-color: #4CAF50; 
+    background-color: #4CAF50;
 }
 
 .remove-button {
-    background-color: #FF5733; 
+    background-color: #FF5733;
 }
 
 .translate-button {
-    background-color: lightblue;
+    background-color: #3498db;
 }
 
-.edit-button {
-    background-color: darkcyan;
+#logoutButton {
+    background-color: #FF5733;
+    margin-right: 10px;
 }
 
-* Modal styles */
+#importButton {
+    background-color: #3498db;
+}
+
+#progressBarContainer {
+    margin: 20px 0;
+}
+
+#progressBar {
+    width: 100%;
+    height: 20px;
+}
+
+/* Modal styles */
 .modal {
     display: block;
     position: fixed;
@@ -76,7 +116,7 @@ button {
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0, 0, 0, 0.4); 
+    background-color: rgba(0, 0, 0, 0.4);
 }
 
 .modal-content {
@@ -84,9 +124,9 @@ button {
     margin: 15% auto;
     padding: 20px;
     border: 1px solid #888;
-    width: 30%; 
+    width: 30%;
+    border-radius: 5px;
 }
-
 
 .modal-content input[type="email"],
 .modal-content input[type="password"] {
@@ -94,31 +134,81 @@ button {
     padding: 10px;
     margin: 10px 0;
     border: 1px solid #ccc;
+    border-radius: 3px;
     box-sizing: border-box;
 }
 
 .modal-content button {
-    background-color: #4CAF50; 
+    background-color: #4CAF50;
     color: white;
     padding: 10px 15px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
 }
 
-#logoutButton {
-    background-color: #FF5733;
+#loginError {
+    color: red;
+    margin-top: 10px;
 }
 
-#importButton {
-    background-color: cyan;
+/* Responsive design */
+@media (max-width: 768px) {
+    li {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .base-word, .center-column, .button-container {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .button-container {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
+    button {
+        width: 30%;
+    }
+
+    .modal-content {
+        width: 80%;
+    }
 }
 
 #progressBarContainer {
-    margin-bottom: 20px;
+    margin: 20px 0;
+    display: none;
 }
 
 #progressBar {
     width: 100%;
     height: 20px;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+#progressBar::-webkit-progress-bar {
+    background-color: #f0f0f0;
+    border-radius: 10px;
+}
+
+#progressBar::-webkit-progress-value {
+    background-color: #4CAF50;
+    border-radius: 10px;
+}
+
+#progressBar::-moz-progress-bar {
+    background-color: #4CAF50;
+    border-radius: 10px;
+}
+
+#progressText {
+    display: block;
+    text-align: center;
+    margin-top: 5px;
 }
