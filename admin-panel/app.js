@@ -298,8 +298,15 @@ function appendSuggestionToList(suggestionKey, wordData) {
     const categoriesDiv = document.createElement('div');
     categoriesDiv.className = 'categories';
     
+    // Add timestamp div
+    const timestampDiv = document.createElement('div');
+    timestampDiv.className = 'timestamp';
+    timestampDiv.dataset.timestamp = wordData.last_updated ? wordData.last_updated.toMillis() : Date.now();
+    timestampDiv.textContent = `Last updated: ${wordData.last_updated ? wordData.last_updated.toDate().toLocaleString() : 'N/A'}`;
+    
     centerColumn.appendChild(translationsDiv);
     centerColumn.appendChild(categoriesDiv);
+    centerColumn.appendChild(timestampDiv);
 
     // Right column: Buttons
     const buttonContainer = document.createElement('div');
@@ -329,7 +336,14 @@ function appendSuggestionToList(suggestionKey, wordData) {
     li.appendChild(centerColumn);
     li.appendChild(buttonContainer);
 
-    suggestionList.appendChild(li);
+    // Find the correct position to insert the new item
+    const insertPosition = findInsertionPosition(suggestionList, wordData.last_updated ? wordData.last_updated.toMillis() : Date.now());
+    
+    if (insertPosition === -1) {
+        suggestionList.appendChild(li);
+    } else {
+        suggestionList.insertBefore(li, suggestionList.children[insertPosition]);
+    }
 
     if (wordData.translations && Object.keys(wordData.translations).length > 0) {
         updateUIWithTranslations(suggestionKey, wordData);
@@ -345,18 +359,22 @@ function updateUIWithTranslations(suggestionKey, wordData) {
     }
 
     const translationsDiv = suggestionItem.querySelector('.translations');
-    translationsDiv.innerHTML = '<strong>Translations:</strong> ';
+    translationsDiv.innerHTML = '<strong>Translations:</strong><br>';
 
-    const priorityLanguages = ['ka', 'en', 'uk'];
-    priorityLanguages.forEach(lang => {
-        if (wordData.translations[lang]) {
-            const translation = wordData.translations[lang];
-            translationsDiv.innerHTML += `${lang}: ${translation.word} (${translation.difficulty}), `;
-        }
-    });
+    if (wordData.translations && Object.keys(wordData.translations).length > 0) {
+        const translationsList = document.createElement('ul');
+        translationsList.className = 'translations-list';
 
-    // Remove trailing comma and space
-    translationsDiv.innerHTML = translationsDiv.innerHTML.replace(/, $/, '');
+        Object.entries(wordData.translations).forEach(([lang, translation]) => {
+            const listItem = document.createElement('li');
+            listItem.innerHTML = `<span class="lang-code">${lang}:</span> ${translation.word} <span class="difficulty">(Difficulty: ${translation.difficulty})</span>`;
+            translationsList.appendChild(listItem);
+        });
+
+        translationsDiv.appendChild(translationsList);
+    } else {
+        translationsDiv.innerHTML += 'No translations available.';
+    }
 
     const categoriesDiv = suggestionItem.querySelector('.categories');
     categoriesDiv.innerHTML = '<strong>Categories:</strong> ';
@@ -535,6 +553,21 @@ function slugify(text) {
     return slug
 }
 
+// Compare timestamps
+function compareTimestamps(a, b) {
+    const timestampA = a.querySelector('.timestamp').dataset.timestamp;
+    const timestampB = b.querySelector('.timestamp').dataset.timestamp;
+    return timestampB - timestampA;
+}
+
+function findInsertionPosition(list, timestamp) {
+    const items = Array.from(list.children);
+    return items.findIndex(item => {
+        const itemTimestamp = item.querySelector('.timestamp').dataset.timestamp;
+        return timestamp > itemTimestamp;
+    });
+}
+
 // Event listeners
 loginButton.addEventListener('click', login);
 logoutButton.addEventListener('click', logout);
@@ -575,7 +608,11 @@ function setupListeners() {
                     suggestionItem.remove();
                 }
             } else if (change.type === 'modified') {
-                updateUIWithTranslations(suggestionKey, wordData);
+                const existingItem = suggestionList.querySelector(`li[data-key="${suggestionKey}"]`);
+                if (existingItem) {
+                    existingItem.remove();
+                }
+                appendSuggestionToList(suggestionKey, wordData);
             }
         });
     });
@@ -583,7 +620,7 @@ function setupListeners() {
 
 // Load suggestions on page load
 async function loadSuggestions() {
-    const snapshot = await suggestedWordsCollection.get();
+    const snapshot = await suggestedWordsCollection.orderBy('last_updated', 'desc').get();
     snapshot.forEach((doc) => {
         appendSuggestionToList(doc.id, doc.data());
     });
