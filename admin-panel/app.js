@@ -540,6 +540,49 @@ async function processAndImportWords(words, language) {
     }
 }
 
+// Translate all words
+async function translateAllWords() {
+    const translateAllButton = document.getElementById('translateAllButton');
+    translateAllButton.disabled = true;
+    translateAllButton.textContent = 'Translating...';
+
+    try {
+        const snapshot = await suggestedWordsCollection.get();
+        let total = snapshot.docs.length;
+        let processed = 0;
+
+        // Show progress bar
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const progressContainer = document.getElementById('progressBarContainer');
+        progressContainer.style.display = 'block';
+        progressBar.max = total;
+        progressBar.value = 0;
+
+        for (const doc of snapshot.docs) {
+            const wordData = doc.data();
+            
+            // Only translate if translations don't exist or are empty
+            if (!wordData.translations || Object.keys(wordData.translations).length === 0) {
+                await handleTranslation(doc.id, wordData);
+            }
+            
+            processed++;
+            progressBar.value = processed;
+            const percentage = Math.round((processed / total) * 100);
+            progressText.textContent = `${percentage}% (${processed}/${total})`;
+        }
+
+        progressContainer.style.display = 'none';
+    } catch (error) {
+        console.error('Error translating all words:', error);
+        alert('An error occurred while translating words. Please try again.');
+    } finally {
+        translateAllButton.disabled = false;
+        translateAllButton.textContent = 'Translate All';
+    }
+}
+
 // Helper functions
 function slugify(text) {
     const slug = text
@@ -571,6 +614,7 @@ function findInsertionPosition(list, timestamp) {
 // Event listeners
 loginButton.addEventListener('click', login);
 logoutButton.addEventListener('click', logout);
+document.getElementById('translateAllButton').addEventListener('click', translateAllWords);
 
 importButton.addEventListener('click', () => {
     importFileInput.click();

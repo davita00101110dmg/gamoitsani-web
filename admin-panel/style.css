@@ -93,8 +93,9 @@ button {
     margin-right: 10px;
 }
 
-#importButton {
+#importButton, #translateAllButton {
     background-color: #3498db;
+    margin-right: 10px;
 }
 
 #progressBarContainer {
