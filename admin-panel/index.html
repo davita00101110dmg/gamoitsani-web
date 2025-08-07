@@ -3,34 +3,215 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Word Suggestions</title>
+    <title>Word Management Admin Panel</title>
     <link rel="stylesheet" href="style.css">
-    <style id="dynamic-styles"></style>
 </head>
 <body>
+    <!-- Login Modal -->
     <div id="authModal" class="modal">
         <div class="modal-content">
-            <h2>Admin Login</h2>
-            <input type="email" id="emailInput" placeholder="Email">
-            <input type="password" id="passwordInput" placeholder="Password">
-            <button type="button" id="loginButton">Login</button>
-            <p id="loginError"></p> 
+            <div class="login-header">
+                <svg class="login-icon" width="60" height="60" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L2 7V12C2 16.55 4.84 20.74 9 22.5L12 23.5L15 22.5C19.16 20.74 22 16.55 22 12V7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 11V15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="12" cy="8" r="1" fill="currentColor"/>
+                </svg>
+                <h2>Admin Login</h2>
+                <p class="login-subtitle">Sign in to manage word translations</p>
+            </div>
+            <div class="login-form">
+                <div class="input-group">
+                    <input type="email" id="emailInput" placeholder=" " required>
+                    <label for="emailInput">Email Address</label>
+                </div>
+                <div class="input-group">
+                    <input type="password" id="passwordInput" placeholder=" " required>
+                    <label for="passwordInput">Password</label>
+                </div>
+                <button type="button" id="loginButton" class="btn-primary">
+                    <span>Sign In</span>
+                </button>
+                <p id="loginError" class="error-message"></p>
+            </div>
         </div>
     </div>
 
-    <div id="appContent" class="container" style="display:none;"> 
-        <h1>Word Suggestions</h1>
-        <button type="button" id="logoutButton">Logout</button>
-        <button type="button" id="importButton">Import Words</button>
-        <button type="button" id="translateAllButton">Translate All</button>
+    <!-- Main App Content -->
+    <div id="appContent" style="display:none;">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1>Word Management System</h1>
+                    <div class="mode-badge" id="modeBadge">
+                        <span class="mode-indicator"></span>
+                        <span class="mode-text">Testing Mode</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button type="button" id="logoutButton" class="btn-logout">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Logout</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <div class="controls-grid">
+                <!-- Statistics Cards -->
+                <div class="stats-cards">
+                    <div class="stat-card pending">
+                        <div class="stat-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                                <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="pendingCount">0</span>
+                            <span class="stat-label">Pending</span>
+                        </div>
+                    </div>
+                    <div class="stat-card translated">
+                        <div class="stat-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path d="M3 5h12M9 3v2M10.048 14.5c.238-1.5 1.238-2.5 2.452-2.5s2.214 1 2.452 2.5M10.048 14.5c-.666 1.5-1.548 3-2.548 4.5m4.548-4.5c.666 1.5 1.548 3 2.548 4.5M21 5h-7m0 0v2m0-2v2m0 0v11c0 1.5-1.5 3.5-3 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="translatedCount">0</span>
+                            <span class="stat-label">Translated</span>
+                        </div>
+                    </div>
+                    <div class="stat-card failed">
+                        <div class="stat-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                                <path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="failedCount">0</span>
+                            <span class="stat-label">Failed</span>
+                        </div>
+                    </div>
+                    <div class="stat-card accepted">
+                        <div class="stat-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                                <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="acceptedCount">0</span>
+                            <span class="stat-label">Accepted</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button type="button" id="importButton" class="btn-action">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Import Words</span>
+                    </button>
+                    <button type="button" id="translateAllButton" class="btn-action">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M3 5h12M9 3v2M10.048 14.5c.238-1.5 1.238-2.5 2.452-2.5s2.214 1 2.452 2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Translate All</span>
+                    </button>
+                    <button type="button" id="autoProcessAllButton" class="btn-action">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2v6l3-3M12 8l-3-3M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Auto Process All</span>
+                    </button>
+                </div>
+
+                <!-- Settings -->
+                <div class="settings-section">
+                    <div class="setting-item">
+                        <label class="toggle-label">
+                            <span>Auto-Processing</span>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="autoProcessingToggle">
+                                <span class="slider"></span>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label for="processingMode">Environment:</label>
+                        <select id="processingMode" class="select-input">
+                            <option value="testing">Testing Mode</option>
+                            <option value="production">Production Mode</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div id="progressBarContainer" class="progress-container" style="display:none;">
+                <div class="progress-header">
+                    <span class="progress-title">Processing Words</span>
+                    <span id="progressText" class="progress-text">0%</span>
+                </div>
+                <div class="progress-bar-wrapper">
+                    <div id="progressBar" class="progress-bar"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="tabs-container">
+            <div class="tabs-nav">
+                <button class="tab-button active" data-tab="pending">
+                    <span class="tab-icon">⏳</span>
+                    <span>Pending</span>
+                    <span class="tab-count" id="pendingTabCount">0</span>
+                </button>
+                <button class="tab-button" data-tab="translated">
+                    <span class="tab-icon">✓</span>
+                    <span>Translated</span>
+                    <span class="tab-count" id="translatedTabCount">0</span>
+                </button>
+                <button class="tab-button" data-tab="failed">
+                    <span class="tab-icon">✗</span>
+                    <span>Failed</span>
+                    <span class="tab-count" id="failedTabCount">0</span>
+                </button>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="tabs-content">
+                <div class="tab-pane active" id="pendingTab">
+                    <div class="words-list" id="pendingList">
+                        <!-- Pending words will be inserted here -->
+                    </div>
+                </div>
+                <div class="tab-pane" id="translatedTab">
+                    <div class="words-list" id="translatedList">
+                        <!-- Translated words will be inserted here -->
+                    </div>
+                </div>
+                <div class="tab-pane" id="failedTab">
+                    <div class="words-list" id="failedList">
+                        <!-- Failed words will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <input type="file" id="importFileInput" accept=".txt" style="display: none;">
-        <div id="progressBarContainer" style="display:none;"> 
-            <progress id="progressBar" value="0" max="100"></progress>
-            <span id="progressText">0%</span> 
-        </div>
-        <ul id="suggestionList"></ul>
     </div>
 
+    <!-- Firebase Scripts -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -38,5 +219,3 @@
     <script src="app.js"></script>
 </body>
 </html>
-
-

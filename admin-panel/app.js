@@ -1,3 +1,4 @@
+// Configuration and Constants
 const firebaseConfig = {
     apiKey: window.config.FIREBASE_API_KEY,
     authDomain: window.config.FIREBASE_AUTH_DOMAIN,
@@ -9,62 +10,166 @@ const firebaseConfig = {
     measurementId: window.config.FIREBASE_MEASUREMENT_ID
 };
 
+// Constant Enums and Configurations
+const COLLECTION_NAMES = {
+    production: {
+        suggested: "new_suggested_words",
+        words: "new_words"
+    },
+    testing: {
+        suggested: "test_new_suggested_words",
+        words: "test_new_words"
+    }
+};
+
+const WordStatus = {
+    PENDING: 'pending',
+    PROCESSING: 'processing',
+    TRANSLATED: 'translated',
+    FAILED: 'failed',
+    ACCEPTED: 'accepted'
+};
+
+const ValidationResult = {
+    PASSED: 'passed',
+    FAILED_TRANSLATION: 'failed_translation',
+    FAILED_OTHER: 'failed_other'
+};
+
+const ProcessingConfig = {
+    batchSize: 5,
+    retryDelay: 2000,
+    maxRetries: 3
+};
+
+const AutoProcessingConfig = {
+    isEnabled: false,
+    mode: 'testing',
+    minWordLength: 2,
+    maxWordLength: 20,
+    requiredTranslationSuccess: 0.7,
+    
+    get collections() {
+        return this.mode === 'testing' ? 
+            COLLECTION_NAMES.testing : 
+            COLLECTION_NAMES.production;
+    }
+};
+
+// Firebase Initialization
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-const suggestedWordsCollection = db.collection("new_suggested_words");
-const wordsCollection = db.collection("new_words"); 
+// Translation Validator
+const TranslationValidator = {
+    excludedWords: new Set(['the', 'a', 'and', 'in', 'to', 'is', 'it', 'for', 'on', 'with', 'at']),
+    wordPattern: /^[a-zA-Z]{2,20}$/,
 
-// DOM elements
-const suggestionList = document.getElementById('suggestionList');
-const authModal = document.getElementById('authModal');
-const appContent = document.getElementById('appContent');
-const emailInput = document.getElementById('emailInput');
-const passwordInput = document.getElementById('passwordInput');
-const loginButton = document.getElementById('loginButton');
-const loginError = document.getElementById('loginError');
-const logoutButton = document.getElementById('logoutButton');
-const importButton = document.getElementById('importButton');
-const importFileInput = document.getElementById('importFileInput');
+    async validateWord(word) {
+        if (!word) return false;
 
-// Authentication functions
-async function login() {
-    try {
-        await firebase.auth().signInWithEmailAndPassword(emailInput.value, passwordInput.value);
-        console.log('User logged in successfully.');
-        updateUIForLoggedInUser();
-    } catch (error) {
-        console.error('Error logging in:', error);
-        loginError.textContent = error.message;
+        const cleanWord = word.trim().toLowerCase();
+
+        if (!this.wordPattern.test(cleanWord)) {
+            console.log(`Invalid word composition: ${word}`);
+            return false;
+        }
+
+        if (this.excludedWords.has(cleanWord)) {
+            console.log(`Word is too common: ${word}`);
+            return false;
+        }
+
+        try {
+            const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${cleanWord}`);
+            
+            if (response.status === 200) {
+                return true;
+            } else if (response.status === 404) {
+                console.log(`Word not found in dictionary: ${word}`);
+                return false;
+            } else {
+                console.error(`Dictionary API error for word: ${word}`);
+                return false;
+            }
+        } catch (error) {
+            console.error(`Error validating word ${word}:`, error);
+            return false;
+        }
+    },
+
+    async validateEnglishTranslation(translation) {
+        if (!translation) {
+            return { 
+                isValid: false, 
+                reason: 'No translation provided' 
+            };
+        }
+
+        const isValid = await this.validateWord(translation);
+
+        return {
+            isValid,
+            reason: isValid ? null : 'Word not found in dictionary'
+        };
+    },
+
+    async validateAllTranslations(translations) {
+        const englishTranslation = translations['en']?.word;
+        const englishValidation = await this.validateEnglishTranslation(englishTranslation);
+
+        if (!englishValidation.isValid) {
+            return {
+                isValid: false,
+                successRate: 0,
+                reason: `Invalid English translation: ${englishValidation.reason}`
+            };
+        }
+
+        const successCount = Object.entries(translations)
+            .filter(([lang, trans]) => {
+                if (lang === 'en') return true;
+                return trans && trans.word && !trans.word.includes(' ');
+            }).length;
+
+        const successRate = successCount / Object.keys(translations).length;
+        
+        return {
+            isValid: successRate >= AutoProcessingConfig.requiredTranslationSuccess,
+            successRate,
+            reason: successRate < AutoProcessingConfig.requiredTranslationSuccess ? 
+                    'Insufficient valid translations' : null
+        };
     }
+};
+
+// Utility Functions
+function slugify(text) {
+    return text
+        .toString()
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w\-]+/g, '')
+        .replace(/\-\-+/g, '-');
 }
 
-function logout() {
-    firebase.auth().signOut()
-        .then(() => {
-            console.log('User logged out.');
-            updateUIForLoggedOutUser();
-        })
-        .catch(error => {
-            console.error('Error logging out:', error);
-        });
+function getCollectionNames() {
+    return AutoProcessingConfig.mode === 'testing' 
+        ? COLLECTION_NAMES.testing 
+        : COLLECTION_NAMES.production;
 }
 
-// UI update functions
-function updateUIForLoggedInUser() {
-    authModal.style.display = 'none';
-    appContent.style.display = 'block';
-    loginError.textContent = '';
+function getCollectionReferences() {
+    const names = getCollectionNames();
+    return {
+        suggested: db.collection(names.suggested),
+        words: db.collection(names.words)
+    };
 }
 
-function updateUIForLoggedOutUser() {
-    authModal.style.display = 'block';
-    appContent.style.display = 'none';
-    suggestionList.innerHTML = '';
-}
-
-// Fetch supported languages
+// API and Translation Functions
 async function fetchSupportedLanguages() {
     const languagesSnapshot = await db.collection('supported_languages').get();
     return languagesSnapshot.docs.map(doc => doc.data().code);
@@ -75,7 +180,6 @@ async function fetchCategories() {
     return categoriesSnapshot.docs.map(doc => doc.data().name);
 }
 
-// Translate word
 async function translateWord(word, sourceLang, targetLang) {
     const url = `https://translation.googleapis.com/language/translate/v2?key=${window.config.GOOGLE_API_KEY}`;
     try {
@@ -95,7 +199,6 @@ async function translateWord(word, sourceLang, targetLang) {
             throw new Error(data.error.message);
         }
         let translatedText = data.data.translations[0].translatedText;
-        // Capitalize the first letter of the translated word
         translatedText = translatedText.charAt(0).toUpperCase() + translatedText.slice(1);
         console.log(`API returned translation for "${word}" to ${targetLang}: "${translatedText}"`);
         return translatedText !== word ? translatedText : null;
@@ -105,332 +208,353 @@ async function translateWord(word, sourceLang, targetLang) {
     }
 }
 
-// Process word with GPT-3.5
-async function processWord(word, sourceLanguage) {
-    const categories = await fetchCategories();
-    const supportedLanguages = await fetchSupportedLanguages();
+// Auto Processor
+const AutoProcessor = {
+    async processWord(wordData, updateUI = true) {
+        console.log(`Auto-processing word: ${wordData.base_word}`);
+        
+        await this.updateWordStatus(wordData.id, WordStatus.PROCESSING);
+        
+        try {
+            const processedData = await this.processTranslations(wordData.base_word, wordData.language);
+            if (!processedData) {
+                await this.handleFailedValidation(wordData.id, {
+                    status: WordStatus.FAILED,
+                    validationResult: 'failed_translation',
+                    failureReason: 'Failed to process translations'
+                });
+                return false;
+            }
 
-    const prompt = `Given the word "${word}" in ${sourceLanguage}, provide:
-  1. An array of relevant categories (if there aren't more then 1 or even 1 don't add them) for this word from the following list: ${categories.join(', ')}. Choose only the most appropriate categories that directly relate to the word.
-  2. A difficulty score for this word in it's language (keep in mind that some word can be easy in some languages and hard in other languages) on a scale of 1-5 (1 being easiest, 5 being hardest) for each of these languages: ${supportedLanguages.join(', ')}
-  
-  Consider the following when assigning difficulty scores and again, take this criteriums depending on the language:
-- Word length (longer words are generally more difficult)
-- Word frequency in everyday language (common words are easier)
-- Abstractness (concrete words are easier than abstract concepts)
-- Cultural specificity (words specific to certain cultures may be more difficult)
-- Complexity of meaning (words with multiple or nuanced meanings are more difficult)
+            const translationValidation = await TranslationValidator.validateAllTranslations(processedData.translations);
+            
+            if (!translationValidation.isValid) {
+                await this.handleFailedValidation(wordData.id, {
+                    status: WordStatus.FAILED,
+                    validationResult: 'failed_validation',
+                    failureReason: translationValidation.reason || 'Translation validation failed'
+                });
+                return false;
+            }
 
-  Respond in the following JSON format:
-  {
-    "categories": ["category1", "category2", "category3"],
-    "difficulty_scores": {
-      "lang_code": difficulty_score,
-      ...
-    }
-  }`;
+            await this.moveToMainCollection(wordData, processedData);
+            return true;
 
-    try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${window.config.OPENAI_API_KEY}`
-            },
-            body: JSON.stringify({
-                model: "gpt-3.5-turbo",
-                messages: [{ role: "user", content: prompt }]
-            })
+        } catch (error) {
+            console.error(`Error processing word ${wordData.base_word}:`, error);
+            await this.handleFailedValidation(wordData.id, {
+                status: WordStatus.FAILED,
+                validationResult: 'failed_other',
+                failureReason: error.message || 'Unexpected error during processing'
+            });
+            return false;
+        }
+    },
+
+    async processTranslations(baseWord, baseLanguage) {
+        const supportedLanguages = await fetchSupportedLanguages();
+        const translations = {
+            [baseLanguage]: { word: baseWord, difficulty: 1 }
+        };
+
+        for (const lang of supportedLanguages) {
+            if (lang !== baseLanguage) {
+                const translatedWord = await translateWord(baseWord, baseLanguage, lang);
+                translations[lang] = {
+                    word: translatedWord || baseWord,
+                    difficulty: 1
+                };
+            }
+        }
+
+        return {
+            translations
+        };
+    },
+
+    async moveToMainCollection(wordData, processedData) {
+        const collections = getCollectionReferences();
+        
+        try {
+            const englishTranslation = processedData.translations?.['en']?.word || 
+                                     wordData.base_word;
+            
+            if (!englishTranslation) {
+                throw new Error('No valid word found for document ID');
+            }
+        
+            const wordId = slugify(englishTranslation);
+            
+            await collections.words.doc(wordId).set({
+                base_word: wordData.base_word,
+                categories: [],
+                translations: processedData.translations,
+                last_updated: firebase.firestore.FieldValue.serverTimestamp()
+            });
+    
+            await collections.suggested.doc(wordData.id).delete();
+            console.log(`Word successfully moved to ${collections.words.path}`);
+            await this.updateStatistics();
+            return true;
+    
+        } catch (error) {
+            console.error('Error moving word to main collection:', error);
+            await this.handleFailedValidation(wordData.id, {
+                status: WordStatus.FAILED,
+                validationResult: ValidationResult.FAILED_OTHER,
+                failureReason: 'Error moving to main collection: ' + error.message
+            });
+            return false;
+        }
+    },
+
+    async updateWordStatus(wordId, status, additionalData = {}) {
+        const collections = getCollectionReferences();
+        await collections.suggested.doc(wordId).update({
+            status,
+            ...additionalData,
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    },
+
+    async handleFailedValidation(wordId, failureData) {
+        await this.updateWordStatus(wordId, WordStatus.FAILED, failureData);
+        await this.updateStatistics();
+        return false;
+    },
+
+    async updateStatistics() {
+        const collections = getCollectionReferences();
+        const stats = {
+            pending: 0,
+            translated: 0,
+            failed: 0,
+            accepted: 0
+        };
+
+        const snapshot = await collections.suggested.get();
+        snapshot.docs.forEach(doc => {
+            const status = doc.data().status || WordStatus.PENDING;
+            if (stats.hasOwnProperty(status)) {
+                stats[status]++;
+            }
         });
 
-        const data = await response.json();
-        return JSON.parse(data.choices[0].message.content);
-    } catch (error) {
-        console.error(`Error processing word '${word}':`, error);
-        return null;
-    }
-}
+        // Update UI counters
+        Object.entries(stats).forEach(([status, count]) => {
+            const element = document.getElementById(`${status}Count`);
+            if (element) element.textContent = count;
+            
+            // Update tab counts
+            const tabElement = document.getElementById(`${status}TabCount`);
+            if (tabElement) tabElement.textContent = count;
+        });
+    },
 
-async function processWordFully(baseWord, baseLanguage) {
-    const result = await processWord(baseWord, baseLanguage);
-    if (!result) return null;
+    async processAllPending() {
+        console.log('Starting to process all pending words...');
+        
+        const collections = getCollectionReferences();
+        const progressContainer = document.getElementById('progressBarContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
 
-    const supportedLanguages = await fetchSupportedLanguages();
-    const translations = {
-        [baseLanguage]: { word: baseWord, difficulty: result.difficulty_scores[baseLanguage] || 3 }
-    };
+        try {
+            const snapshot = await collections.suggested
+                .where('status', '==', WordStatus.PENDING)
+                .get();
 
-    for (const lang of supportedLanguages) {
-        if (lang !== baseLanguage) {
-            const translatedWord = await translateWord(baseWord, baseLanguage, lang);
-            translations[lang] = {
-                word: translatedWord || baseWord,
-                difficulty: result.difficulty_scores[lang] || 3
-            };
+            const pendingWords = snapshot.docs;
+            const total = pendingWords.length;
+
+            if (total === 0) {
+                alert('No pending words to process.');
+                return;
+            }
+
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+
+            let processed = 0;
+            let successCount = 0;
+            let failureCount = 0;
+
+            for (const doc of pendingWords) {
+                const wordData = doc.data();
+                
+                try {
+                    const processingResult = await this.processWord(
+                        { 
+                            id: doc.id, 
+                            base_word: wordData.base_word, 
+                            language: wordData.language 
+                        }
+                    );
+
+                    if (processingResult) {
+                        successCount++;
+                    } else {
+                        failureCount++;
+                    }
+                } catch (wordProcessingError) {
+                    console.error(`Error processing word ${wordData.base_word}:`, wordProcessingError);
+                    failureCount++;
+                }
+
+                processed++;
+                const percentage = Math.round((processed / total) * 100);
+                progressBar.style.width = `${percentage}%`;
+                progressText.textContent = `${percentage}% (${processed}/${total}) - Success: ${successCount}, Failures: ${failureCount}`;
+            }
+
+            progressContainer.style.display = 'none';
+            await this.updateStatistics();
+            
+            alert(`Processing complete.\nTotal words: ${total}\nSuccessful: ${successCount}\nFailed: ${failureCount}`);
+
+        } catch (error) {
+            console.error('Error processing pending words:', error);
+            alert('An error occurred while processing words. Please try again.');
+            progressContainer.style.display = 'none';
         }
     }
+};
 
-    return {
-        categories: result.categories,
-        translations: translations
-    };
-}
-
-// Handle word translation
+// Word Management Functions
 async function handleTranslation(suggestionKey, wordData) {
+    const collections = getCollectionReferences();
+    
     if (wordData.translations && Object.keys(wordData.translations).length > 0) {
         console.log("Word already translated. Skipping re-translation.");
-        updateUIWithTranslations(suggestionKey, wordData);
         return;
     }
 
-    const baseWord = wordData.base_word;
-    const baseLanguage = wordData.language || 'en';
-
-    const processedData = await processWordFully(baseWord, baseLanguage);
+    const processedData = await AutoProcessor.processTranslations(wordData.base_word, wordData.language);
     if (!processedData) {
-        console.error(`Failed to process word "${baseWord}"`);
+        console.error(`Failed to process word "${wordData.base_word}"`);
+        await collections.suggested.doc(suggestionKey).update({
+            status: WordStatus.FAILED,
+            failureReason: 'Failed to translate word'
+        });
+        alert(`Failed to translate "${wordData.base_word}". Please try again.`);
         return;
     }
-
-    const updatedWordData = {
-        ...wordData,
-        ...processedData
-    };
 
     try {
-        await suggestedWordsCollection.doc(suggestionKey).update(updatedWordData);
-        console.log(`Updated word data for "${baseWord}" in suggested words collection`);
-        updateUIWithTranslations(suggestionKey, updatedWordData);
+        await collections.suggested.doc(suggestionKey).update({
+            ...wordData,
+            ...processedData,
+            status: WordStatus.TRANSLATED
+        });
+        console.log(`Successfully translated "${wordData.base_word}"`);
+        await AutoProcessor.updateStatistics();
+        
+        // Show success feedback
+        const wordElement = document.querySelector(`[data-key="${suggestionKey}"]`);
+        if (wordElement) {
+            wordElement.style.animation = 'fadeIn 0.5s ease-out';
+        }
     } catch (error) {
-        console.error(`Error updating word data for "${baseWord}":`, error);
+        console.error(`Error updating word data for "${wordData.base_word}":`, error);
+        alert(`Error updating word: ${error.message}`);
     }
 }
 
 async function addSuggestionToWords(suggestionKey, wordData) {
+    const collections = getCollectionReferences();
     try {
-        // Get the English translation of the word
-        const englishTranslation = wordData.translations['en']?.word || wordData.base_word;
+        const englishTranslation = wordData.translations?.['en']?.word || wordData.base_word;
         const wordId = slugify(englishTranslation);
 
-        const existingWord = await wordsCollection.doc(wordId).get();
+        const existingWord = await collections.words.doc(wordId).get();
         if (existingWord.exists) {
-            console.log(`Word "${englishTranslation}" already exists in the new_words collection.`);
-            await suggestedWordsCollection.doc(suggestionKey).delete();
+            console.log(`Word "${englishTranslation}" already exists in ${collections.words.path}`);
+            await collections.suggested.doc(suggestionKey).delete();
             return;
         }
 
         let processedWordData = wordData;
-        if (!wordData.translations || Object.keys(wordData.translations).length === 0 || !wordData.categories) {
-            console.log(`Processing word "${wordData.base_word}" before adding to new_words collection.`);
-            const processedData = await processWordFully(wordData.base_word, wordData.language || 'en');
+        if (!wordData.translations || Object.keys(wordData.translations).length === 0) {
+            const processedData = await AutoProcessor.processTranslations(wordData.base_word, wordData.language || 'en');
             if (!processedData) {
                 console.error(`Failed to process word "${wordData.base_word}"`);
                 return;
             }
             processedWordData = { ...wordData, ...processedData };
-        } else {
-            console.log(`Word "${wordData.base_word}" already processed. Using existing data.`);
         }
 
-        const newWordData = {
+        await collections.words.doc(wordId).set({
             base_word: processedWordData.base_word,
-            categories: processedWordData.categories,
+            language: processedWordData.language,
             translations: processedWordData.translations,
-            last_updated: firebase.firestore.FieldValue.serverTimestamp()
-        };
+            categories: [],
+            status: WordStatus.ACCEPTED,
+            autoProcessed: AutoProcessingConfig.isEnabled,
+            processedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
 
-        await wordsCollection.doc(wordId).set(newWordData);
-        console.log(`Word "${processedWordData.base_word}" added to the new_words collection with ID: ${wordId}`);
+        await collections.suggested.doc(suggestionKey).delete();
+        console.log(`Word "${processedWordData.base_word}" added to ${collections.words.path}`);
+        await AutoProcessor.updateStatistics();
 
-        await suggestedWordsCollection.doc(suggestionKey).delete();
-
-        const suggestionItem = document.querySelector(`li[data-key="${suggestionKey}"]`);
-        if (suggestionItem) {
-            suggestionItem.remove();
-        }
     } catch (error) {
-        console.error('Error adding word to new_words collection:', error);
+        console.error('Error adding word:', error);
     }
 }
 
-// Remove suggestion
 async function removeSuggestion(suggestionKey) {
+    const collections = getCollectionReferences();
     try {
-        await suggestedWordsCollection.doc(suggestionKey).delete();
-        console.log(`Suggestion with key "${suggestionKey}" removed.`);
-        
-        const suggestionItem = document.querySelector(`li[data-key="${suggestionKey}"]`);
-        if (suggestionItem) {
-            suggestionItem.remove();
-        }
+        await collections.suggested.doc(suggestionKey).delete();
+        console.log(`Suggestion with key "${suggestionKey}" removed from ${collections.suggested.path}`);
+        await AutoProcessor.updateStatistics();
     } catch (error) {
         console.error('Error removing suggestion:', error);
     }
 }
 
-// Handle word actions (add or remove)
-function handleWordAction(suggestionKey, action, wordData) {
-    if (action === 'add') {
-        addSuggestionToWords(suggestionKey, wordData);
-    } else if (action === 'remove') {
-        removeSuggestion(suggestionKey);
-    }
-}
-
-// UI functions
-function appendSuggestionToList(suggestionKey, wordData) {
-    const li = document.createElement('li');
-    li.dataset.key = suggestionKey;
-
-    // Left column: Base word
-    const baseWordDiv = document.createElement('div');
-    baseWordDiv.className = 'base-word';
-    baseWordDiv.textContent = `${wordData.base_word} (${wordData.language || 'Unknown'})`;
-    
-    // Center column: Translations and Categories
-    const centerColumn = document.createElement('div');
-    centerColumn.className = 'center-column';
-    
-    const translationsDiv = document.createElement('div');
-    translationsDiv.className = 'translations';
-    
-    const categoriesDiv = document.createElement('div');
-    categoriesDiv.className = 'categories';
-    
-    // Add timestamp div
-    const timestampDiv = document.createElement('div');
-    timestampDiv.className = 'timestamp';
-    timestampDiv.dataset.timestamp = wordData.last_updated ? wordData.last_updated.toMillis() : Date.now();
-    timestampDiv.textContent = `Last updated: ${wordData.last_updated ? wordData.last_updated.toDate().toLocaleString() : 'N/A'}`;
-    
-    centerColumn.appendChild(translationsDiv);
-    centerColumn.appendChild(categoriesDiv);
-    centerColumn.appendChild(timestampDiv);
-
-    // Right column: Buttons
-    const buttonContainer = document.createElement('div');
-    buttonContainer.className = 'button-container';
-    
-    const acceptButton = document.createElement('button');
-    acceptButton.className = 'add-button';
-    acceptButton.textContent = 'Accept';
-    acceptButton.addEventListener('click', () => handleWordAction(suggestionKey, 'add', wordData));
-
-    const declineButton = document.createElement('button');
-    declineButton.className = 'remove-button';
-    declineButton.textContent = 'Decline';
-    declineButton.addEventListener('click', () => handleWordAction(suggestionKey, 'remove'));
-
-    const translateButton = document.createElement('button');
-    translateButton.className = 'translate-button';
-    translateButton.textContent = 'Translate';
-    translateButton.addEventListener('click', () => handleTranslation(suggestionKey, wordData));
-
-    buttonContainer.appendChild(acceptButton);
-    buttonContainer.appendChild(declineButton);
-    buttonContainer.appendChild(translateButton);
-
-    // Append all columns to the list item
-    li.appendChild(baseWordDiv);
-    li.appendChild(centerColumn);
-    li.appendChild(buttonContainer);
-
-    // Find the correct position to insert the new item
-    const insertPosition = findInsertionPosition(suggestionList, wordData.last_updated ? wordData.last_updated.toMillis() : Date.now());
-    
-    if (insertPosition === -1) {
-        suggestionList.appendChild(li);
-    } else {
-        suggestionList.insertBefore(li, suggestionList.children[insertPosition]);
-    }
-
-    if (wordData.translations && Object.keys(wordData.translations).length > 0) {
-        updateUIWithTranslations(suggestionKey, wordData);
-    }
-}
-
-// Update UI with translations
-function updateUIWithTranslations(suggestionKey, wordData) {
-    const suggestionItem = document.querySelector(`li[data-key="${suggestionKey}"]`);
-    if (!suggestionItem) {
-        console.error(`Suggestion item with key ${suggestionKey} not found`);
-        return;
-    }
-
-    const translationsDiv = suggestionItem.querySelector('.translations');
-    translationsDiv.innerHTML = '<strong>Translations:</strong><br>';
-
-    if (wordData.translations && Object.keys(wordData.translations).length > 0) {
-        const translationsList = document.createElement('ul');
-        translationsList.className = 'translations-list';
-
-        Object.entries(wordData.translations).forEach(([lang, translation]) => {
-            const listItem = document.createElement('li');
-            listItem.innerHTML = `<span class="lang-code">${lang}:</span> ${translation.word} <span class="difficulty">(Difficulty: ${translation.difficulty})</span>`;
-            translationsList.appendChild(listItem);
-        });
-
-        translationsDiv.appendChild(translationsList);
-    } else {
-        translationsDiv.innerHTML += 'No translations available.';
-    }
-
-    const categoriesDiv = suggestionItem.querySelector('.categories');
-    categoriesDiv.innerHTML = '<strong>Categories:</strong> ';
-    if (wordData.categories && wordData.categories.length > 0) {
-        categoriesDiv.innerHTML += wordData.categories.join(', ');
-    } else {
-        categoriesDiv.innerHTML += 'None';
-    }
-}
-
-// Import functions
+// Import Functions
 async function importWordsFromTxt(file) {
     try {
-        console.log("Starting import process...");
+        console.log(`Starting import process in ${AutoProcessingConfig.mode} mode...`);
 
         const language = await askForLanguage();
         if (!language) {
             console.log("Language selection cancelled");
             return;
         }
-        console.log(`Selected language: ${language}`);
 
         const words = await readWordsFromFile(file);
-        console.log(`Read ${words.length} words from file`);
-
         if (words.length === 0) {
             alert('No words found in the file.');
             return;
         }
 
-        console.log(`Importing ${words.length} words in ${language} language`);
-
         const existingWords = await getExistingWords();
-        console.log(`Found ${existingWords.size} existing words`);
-
         const newWords = words.filter(word => !existingWords.has(word.toLowerCase()));
-        console.log(`${newWords.length} new words to import`);
 
         if (newWords.length === 0) {
-            alert('All words in the file already exist in the collection.');
+            alert(`All words already exist in the ${AutoProcessingConfig.mode} collections.`);
             return;
         }
 
-        // Show progress bar
         document.getElementById('progressBarContainer').style.display = 'block';
-
         await processAndImportWords(newWords, language);
-
-        // Hide progress bar
         document.getElementById('progressBarContainer').style.display = 'none';
 
-        alert(`Import complete. ${newWords.length} words added.`);
+        alert(`Import complete. ${newWords.length} words added to ${AutoProcessingConfig.mode} collections.`);
+        
+        await AutoProcessor.updateStatistics();
+
+        if (AutoProcessingConfig.isEnabled) {
+            const shouldProcess = confirm('Would you like to auto-process the imported words now?');
+            if (shouldProcess) {
+                await AutoProcessor.processAllPending();
+            }
+        }
     } catch (error) {
         console.error('Error importing words:', error);
-        alert(`An error occurred while importing words: ${error.message}`);
-        // Hide progress bar in case of error
+        alert(`Error during import: ${error.message}`);
         document.getElementById('progressBarContainer').style.display = 'none';
     }
 }
@@ -438,35 +562,33 @@ async function importWordsFromTxt(file) {
 async function askForLanguage() {
     const supportedLanguages = await fetchSupportedLanguages();
     return new Promise((resolve) => {
-        const select = document.createElement('select');
-        supportedLanguages.forEach(lang => {
-            const option = document.createElement('option');
-            option.value = lang;
-            option.textContent = lang;
-            select.appendChild(option);
-        });
-
-        const dialog = document.createElement('dialog');
-        dialog.innerHTML = `
-            <form method="dialog">
-                <h2>Select Language</h2>
-                ${select.outerHTML}
-                <button value="cancel">Cancel</button>
-                <button value="default">OK</button>
-            </form>
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 300px;">
+                <h3 style="margin-bottom: 1rem;">Select Language</h3>
+                <select id="langSelect" class="select-input" style="width: 100%; margin-bottom: 1rem;">
+                    ${supportedLanguages.map(lang => `<option value="${lang}">${lang.toUpperCase()}</option>`).join('')}
+                </select>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button id="langCancel" class="btn-action" style="flex: 1;">Cancel</button>
+                    <button id="langOK" class="btn-primary" style="flex: 1;">OK</button>
+                </div>
+            </div>
         `;
 
-        document.body.appendChild(dialog);
-        dialog.showModal();
+        document.body.appendChild(modal);
 
-        dialog.addEventListener('close', () => {
-            if (dialog.returnValue !== 'cancel') {
-                resolve(dialog.querySelector('select').value);
-            } else {
-                resolve(null);
-            }
-            document.body.removeChild(dialog);
-        });
+        document.getElementById('langCancel').onclick = () => {
+            document.body.removeChild(modal);
+            resolve(null);
+        };
+
+        document.getElementById('langOK').onclick = () => {
+            const selected = document.getElementById('langSelect').value;
+            document.body.removeChild(modal);
+            resolve(selected);
+        };
     });
 }
 
@@ -489,13 +611,28 @@ async function readWordsFromFile(file) {
 
 async function getExistingWords() {
     try {
-        const wordsSnapshot = await wordsCollection.get();
-        const suggestionsSnapshot = await suggestedWordsCollection.get();
+        const collections = getCollectionReferences();
+        const wordsSnapshot = await collections.words.get();
+        const suggestionsSnapshot = await collections.suggested.get();
         
-        return new Set([
-            ...wordsSnapshot.docs.map(doc => doc.data().base_word.toLowerCase()),
-            ...suggestionsSnapshot.docs.map(doc => doc.data().base_word.toLowerCase())
-        ]);
+        const existingWords = new Set();
+        
+        for (const doc of wordsSnapshot.docs) {
+            const data = doc.data();
+            if (data?.base_word) {
+                existingWords.add(data.base_word.toLowerCase());
+            }
+        }
+        
+        for (const doc of suggestionsSnapshot.docs) {
+            const data = doc.data();
+            if (data?.base_word) {
+                existingWords.add(data.base_word.toLowerCase());
+            }
+        }
+
+        console.log(`Found ${existingWords.size} existing words in ${AutoProcessingConfig.mode} collections`);
+        return existingWords;
     } catch (error) {
         console.error('Error fetching existing words:', error);
         throw error;
@@ -505,170 +642,468 @@ async function getExistingWords() {
 async function processAndImportWords(words, language) {
     const progressBar = document.getElementById('progressBar');
     const progressText = document.getElementById('progressText');
-    progressBar.max = words.length;
-    progressBar.value = 0;
+    const collections = getCollectionReferences();
+    
+    progressBar.style.width = '0%';
 
     for (let i = 0; i < words.length; i++) {
         try {
             const word = words[i];
-            console.log(`Processing word: ${word}`);
-
-            const processedData = await processWordFully(word, language);
-            if (!processedData) {
-                console.error(`Failed to process word "${word}"`);
-                continue;
-            }
+            console.log(`Importing word: ${word}`);
 
             const wordData = {
                 base_word: word,
+                base_word_lower: word.toLowerCase(),
                 language: language,
-                categories: processedData.categories,
-                translations: processedData.translations,
-                last_updated: firebase.firestore.FieldValue.serverTimestamp()
+                status: WordStatus.PENDING,
+                addedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            // Generate a unique ID for the suggestion
-            const suggestionKey = suggestedWordsCollection.doc().id;
-            await suggestedWordsCollection.doc(suggestionKey).set(wordData);
+            const docRef = await collections.suggested.add(wordData);
+            console.log(`Added word "${word}" with ID: ${docRef.id}`);
 
-            progressBar.value = i + 1;
             const progressPercentage = Math.round(((i + 1) / words.length) * 100);
+            progressBar.style.width = `${progressPercentage}%`;
             progressText.textContent = `${progressPercentage}% (${i + 1}/${words.length})`;
         } catch (error) {
-            console.error(`Error processing word at index ${i}:`, error);
+            console.error(`Error importing word "${words[i]}":`, error);
         }
     }
 }
 
-// Translate all words
+// Translation of all words
 async function translateAllWords() {
     const translateAllButton = document.getElementById('translateAllButton');
     translateAllButton.disabled = true;
-    translateAllButton.textContent = 'Translating...';
+    translateAllButton.innerHTML = '<span class="loading"></span> Translating...';
 
     try {
-        const snapshot = await suggestedWordsCollection.get();
+        const collections = getCollectionReferences();
+        const snapshot = await collections.suggested
+            .where('status', 'in', [WordStatus.PENDING, WordStatus.FAILED])
+            .get();
+        
         let total = snapshot.docs.length;
+        
+        if (total === 0) {
+            alert('No words to translate.');
+            return;
+        }
+        
         let processed = 0;
 
-        // Show progress bar
+        const progressContainer = document.getElementById('progressBarContainer');
         const progressBar = document.getElementById('progressBar');
         const progressText = document.getElementById('progressText');
-        const progressContainer = document.getElementById('progressBarContainer');
         progressContainer.style.display = 'block';
-        progressBar.max = total;
-        progressBar.value = 0;
+        progressBar.style.width = '0%';
 
         for (const doc of snapshot.docs) {
             const wordData = doc.data();
             
-            // Only translate if translations don't exist or are empty
             if (!wordData.translations || Object.keys(wordData.translations).length === 0) {
                 await handleTranslation(doc.id, wordData);
             }
             
             processed++;
-            progressBar.value = processed;
             const percentage = Math.round((processed / total) * 100);
+            progressBar.style.width = `${percentage}%`;
             progressText.textContent = `${percentage}% (${processed}/${total})`;
         }
 
         progressContainer.style.display = 'none';
+        await AutoProcessor.updateStatistics();
+        alert(`Translation complete. ${processed} words processed.`);
+        
     } catch (error) {
         console.error('Error translating all words:', error);
         alert('An error occurred while translating words. Please try again.');
     } finally {
         translateAllButton.disabled = false;
-        translateAllButton.textContent = 'Translate All';
+        translateAllButton.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 5h12M9 3v2M10.048 14.5c.238-1.5 1.238-2.5 2.452-2.5s2.214 1 2.452 2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Translate All</span>';
+        document.getElementById('progressBarContainer').style.display = 'none';
     }
 }
 
-// Helper functions
-function slugify(text) {
-    const slug = text
-        .toString()
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, '-')
-        .replace(/[^\w\-]+/g, '')
-        .replace(/\-\-+/g, '-');
+// UI Functions
+function createWordElement(suggestionKey, wordData) {
+    const wordItem = document.createElement('div');
+    wordItem.className = 'word-item';
+    wordItem.dataset.key = suggestionKey;
+
+    const hasTranslations = wordData.translations && Object.keys(wordData.translations).length > 0;
+    const isFailed = wordData.status === WordStatus.FAILED;
     
-    return slug
-}
+    // Default to PENDING if no status is set
+    const currentStatus = wordData.status || WordStatus.PENDING;
 
-// Compare timestamps
-function compareTimestamps(a, b) {
-    const timestampA = a.querySelector('.timestamp').dataset.timestamp;
-    const timestampB = b.querySelector('.timestamp').dataset.timestamp;
-    return timestampB - timestampA;
-}
-
-function findInsertionPosition(list, timestamp) {
-    const items = Array.from(list.children);
-    return items.findIndex(item => {
-        const itemTimestamp = item.querySelector('.timestamp').dataset.timestamp;
-        return timestamp > itemTimestamp;
-    });
-}
-
-// Event listeners
-loginButton.addEventListener('click', login);
-logoutButton.addEventListener('click', logout);
-document.getElementById('translateAllButton').addEventListener('click', translateAllWords);
-
-importButton.addEventListener('click', () => {
-    importFileInput.click();
-});
-
-importFileInput.addEventListener('change', (event) => {
-    const file = event.target.files[0];
-    if (file) {
-        importWordsFromTxt(file);
+    let translationsHTML = '';
+    if (hasTranslations) {
+        translationsHTML = `
+            <div class="word-translations">
+                <div class="translations-title">Translations</div>
+                <div class="translations-grid">
+                    ${Object.entries(wordData.translations).map(([lang, trans]) => `
+                        <div class="translation-item">
+                            <div class="translation-lang">${lang}</div>
+                            <div class="translation-word">${trans.word}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
     }
-});
 
-// Initialize function
-function initApp() {
-    updateUIForLoggedOutUser();
-    firebase.auth().onAuthStateChanged(user => {
-        if (user) {
-            updateUIForLoggedInUser();
-            setupListeners();
-        }
-    });
+    let actionsHTML = '';
+    // Show action buttons for PENDING status or if no status is set
+    if (currentStatus === WordStatus.PENDING || !wordData.status) {
+        actionsHTML = `
+            <div class="word-actions">
+                <button class="btn-word-action btn-translate" onclick="handleWordAction('${suggestionKey}', 'translate')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 5h12M9 3v2M10.048 14.5c.238-1.5 1.238-2.5 2.452-2.5s2.214 1 2.452 2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Translate
+                </button>
+                <button class="btn-word-action btn-decline" onclick="handleWordAction('${suggestionKey}', 'remove')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Delete
+                </button>
+            </div>
+        `;
+    } else if (currentStatus === WordStatus.TRANSLATED) {
+        actionsHTML = `
+            <div class="word-actions">
+                <button class="btn-word-action btn-accept" onclick="handleWordAction('${suggestionKey}', 'add')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M5 12l5 5L20 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Accept
+                </button>
+                <button class="btn-word-action btn-decline" onclick="handleWordAction('${suggestionKey}', 'remove')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Decline
+                </button>
+            </div>
+        `;
+    } else if (currentStatus === WordStatus.FAILED) {
+        actionsHTML = `
+            <div class="word-actions">
+                <button class="btn-word-action btn-retry" onclick="handleWordAction('${suggestionKey}', 'translate')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M1 4v6h6M23 20v-6h-6M20.49 9A9 9 0 105.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Retry
+                </button>
+                <button class="btn-word-action btn-decline" onclick="handleWordAction('${suggestionKey}', 'remove')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Remove
+                </button>
+            </div>
+        `;
+    }
+
+    const timestamp = wordData.addedAt ? new Date(wordData.addedAt.toDate()).toLocaleString() : 'N/A';
+    
+    wordItem.innerHTML = `
+        <div class="word-header">
+            <div class="word-info">
+                <div class="word-base">${wordData.base_word}</div>
+                <div class="word-meta">
+                    <span class="word-language">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                            <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        ${wordData.language || 'Unknown'}
+                    </span>
+                    <span class="word-timestamp">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                            <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        ${timestamp}
+                    </span>
+                </div>
+            </div>
+            <div class="word-status status-${currentStatus}">
+                ${currentStatus.toUpperCase()}
+                ${isFailed && wordData.failureReason ? `<span class="failure-reason">${wordData.failureReason}</span>` : ''}
+            </div>
+        </div>
+        ${translationsHTML}
+        ${actionsHTML}
+    `;
+
+    return wordItem;
 }
 
-// Setup listeners for real-time updates
-function setupListeners() {
-    return suggestedWordsCollection.onSnapshot((snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-            const suggestionKey = change.doc.id;
-            const wordData = change.doc.data();
-            if (change.type === 'added') {
-                appendSuggestionToList(suggestionKey, wordData);
-            } else if (change.type === 'removed') {
-                const suggestionItem = suggestionList.querySelector(`li[data-key="${suggestionKey}"]`);
-                if (suggestionItem) {
-                    suggestionItem.remove();
-                }
-            } else if (change.type === 'modified') {
-                const existingItem = suggestionList.querySelector(`li[data-key="${suggestionKey}"]`);
-                if (existingItem) {
-                    existingItem.remove();
-                }
-                appendSuggestionToList(suggestionKey, wordData);
+function updateWordInUI(suggestionKey, wordData) {
+    const existingItem = document.querySelector(`[data-key="${suggestionKey}"]`);
+    if (existingItem) {
+        existingItem.remove();
+    }
+
+    const targetList = getListForStatus(wordData.status);
+    if (targetList) {
+        const newElement = createWordElement(suggestionKey, wordData);
+        targetList.appendChild(newElement);
+    }
+}
+
+function getListForStatus(status) {
+    // Default to PENDING if no status is set
+    const actualStatus = status || WordStatus.PENDING;
+    
+    switch (actualStatus) {
+        case WordStatus.PENDING:
+            return document.getElementById('pendingList');
+        case WordStatus.TRANSLATED:
+            return document.getElementById('translatedList');
+        case WordStatus.FAILED:
+            return document.getElementById('failedList');
+        default:
+            return document.getElementById('pendingList');
+    }
+}
+
+// Global function for handling word actions
+window.handleWordAction = async function(suggestionKey, action) {
+    const collections = getCollectionReferences();
+    const doc = await collections.suggested.doc(suggestionKey).get();
+    
+    if (!doc.exists) {
+        console.error(`Document ${suggestionKey} not found`);
+        return;
+    }
+    
+    const wordData = doc.data();
+    
+    // Provide visual feedback
+    const wordElement = document.querySelector(`[data-key="${suggestionKey}"]`);
+    if (wordElement) {
+        const actionButton = wordElement.querySelector(`.btn-${action === 'add' ? 'accept' : action === 'remove' ? 'decline' : 'translate'}`);
+        if (actionButton) {
+            actionButton.disabled = true;
+            actionButton.innerHTML = '<span class="loading"></span> Processing...';
+        }
+    }
+
+    try {
+        if (action === 'add') {
+            await addSuggestionToWords(suggestionKey, wordData);
+        } else if (action === 'remove') {
+            if (confirm(`Are you sure you want to delete "${wordData.base_word}"?`)) {
+                await removeSuggestion(suggestionKey);
             }
+        } else if (action === 'translate') {
+            await handleTranslation(suggestionKey, wordData);
+        }
+    } catch (error) {
+        console.error(`Error performing action ${action}:`, error);
+        alert(`Error: ${error.message}`);
+        
+        // Restore button state on error
+        if (wordElement) {
+            const actionButton = wordElement.querySelector(`.btn-${action === 'add' ? 'accept' : action === 'remove' ? 'decline' : 'translate'}`);
+            if (actionButton) {
+                actionButton.disabled = false;
+                actionButton.innerHTML = action === 'translate' ? 
+                    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 5h12M9 3v2M10.048 14.5c.238-1.5 1.238-2.5 2.452-2.5s2.214 1 2.452 2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Translate' :
+                    action === 'remove' ? 
+                    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Delete' :
+                    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Accept';
+            }
+        }
+    }
+};
+
+// Tab Management
+function initializeTabs() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetTab = button.dataset.tab;
+
+            // Update active states
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabPanes.forEach(pane => pane.classList.remove('active'));
+
+            button.classList.add('active');
+            document.getElementById(`${targetTab}Tab`).classList.add('active');
         });
     });
 }
 
-// Load suggestions on page load
-async function loadSuggestions() {
-    const snapshot = await suggestedWordsCollection.orderBy('last_updated', 'desc').get();
-    snapshot.forEach((doc) => {
-        appendSuggestionToList(doc.id, doc.data());
+// Authentication Functions
+async function login() {
+    const emailInput = document.getElementById('emailInput');
+    const passwordInput = document.getElementById('passwordInput');
+    const loginError = document.getElementById('loginError');
+    
+    try {
+        await firebase.auth().signInWithEmailAndPassword(emailInput.value, passwordInput.value);
+        console.log('User logged in successfully.');
+        updateUIForLoggedInUser();
+    } catch (error) {
+        console.error('Error logging in:', error);
+        loginError.textContent = error.message;
+    }
+}
+
+function logout() {
+    firebase.auth().signOut()
+        .then(() => {
+            console.log('User logged out.');
+            updateUIForLoggedOutUser();
+        })
+        .catch(error => {
+            console.error('Error logging out:', error);
+        });
+}
+
+function updateUIForLoggedInUser() {
+    document.getElementById('authModal').style.display = 'none';
+    document.getElementById('appContent').style.display = 'block';
+    document.getElementById('loginError').textContent = '';
+    setupListeners();
+    AutoProcessor.updateStatistics();
+}
+
+function updateUIForLoggedOutUser() {
+    document.getElementById('authModal').style.display = 'flex';
+    document.getElementById('appContent').style.display = 'none';
+    
+    // Clear lists
+    document.getElementById('pendingList').innerHTML = '';
+    document.getElementById('translatedList').innerHTML = '';
+    document.getElementById('failedList').innerHTML = '';
+    
+    // Clear any existing Firebase listeners
+    if (window.currentListener) {
+        window.currentListener();
+        window.currentListener = null;
+    }
+}
+
+// Setup Firebase Listeners
+function setupListeners() {
+    if (window.currentListener) {
+        window.currentListener();
+    }
+
+    const collections = getCollectionReferences();
+    
+    // Clear lists before populating
+    document.getElementById('pendingList').innerHTML = '';
+    document.getElementById('translatedList').innerHTML = '';
+    document.getElementById('failedList').innerHTML = '';
+    
+    window.currentListener = collections.suggested.onSnapshot((snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            const suggestionKey = change.doc.id;
+            const wordData = change.doc.data();
+            
+            if (change.type === 'added' || change.type === 'modified') {
+                updateWordInUI(suggestionKey, wordData);
+            } else if (change.type === 'removed') {
+                const suggestionItem = document.querySelector(`[data-key="${suggestionKey}"]`);
+                if (suggestionItem) {
+                    suggestionItem.remove();
+                }
+            }
+        });
+        
+        AutoProcessor.updateStatistics();
     });
 }
 
-// Start the app
-document.addEventListener('DOMContentLoaded', initApp);
+function updateModeIndicator() {
+    const modeBadge = document.getElementById('modeBadge');
+    const modeText = modeBadge.querySelector('.mode-text');
+    
+    if (AutoProcessingConfig.mode === 'production') {
+        modeBadge.classList.remove('testing');
+        modeBadge.classList.add('production');
+        modeText.textContent = 'Production Mode';
+    } else {
+        modeBadge.classList.remove('production');
+        modeBadge.classList.add('testing');
+        modeText.textContent = 'Testing Mode';
+    }
+}
+
+// Event Listeners
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize tabs
+    initializeTabs();
+    
+    // Authentication
+    document.getElementById('loginButton').addEventListener('click', login);
+    document.getElementById('logoutButton').addEventListener('click', logout);
+    
+    // Import/Export
+    document.getElementById('importButton').addEventListener('click', () => {
+        document.getElementById('importFileInput').click();
+    });
+    
+    document.getElementById('importFileInput').addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            importWordsFromTxt(file);
+        }
+    });
+    
+    // Translation and Processing
+    document.getElementById('translateAllButton').addEventListener('click', translateAllWords);
+    
+    document.getElementById('autoProcessAllButton').addEventListener('click', async () => {
+        if (confirm('Process all pending words? This will translate and validate all pending words.')) {
+            const button = document.getElementById('autoProcessAllButton');
+            button.disabled = true;
+            button.innerHTML = '<span class="loading"></span> Processing...';
+            await AutoProcessor.processAllPending();
+            button.disabled = false;
+            button.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2v6l3-3M12 8l-3-3M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Auto Process All</span>';
+        }
+    });
+    
+    // Settings
+    document.getElementById('autoProcessingToggle').addEventListener('change', (e) => {
+        AutoProcessingConfig.isEnabled = e.target.checked;
+        console.log(`Auto-processing ${AutoProcessingConfig.isEnabled ? 'enabled' : 'disabled'}`);
+    });
+    
+    document.getElementById('processingMode').addEventListener('change', (e) => {
+        AutoProcessingConfig.mode = e.target.value;
+        console.log(`Processing mode changed to: ${AutoProcessingConfig.mode}`);
+        updateModeIndicator();
+        
+        // Clear lists and reinitialize
+        document.getElementById('pendingList').innerHTML = '';
+        document.getElementById('translatedList').innerHTML = '';
+        document.getElementById('failedList').innerHTML = '';
+        
+        if (firebase.auth().currentUser) {
+            setupListeners();
+        }
+    });
+    
+    // Initialize app
+    updateUIForLoggedOutUser();
+    updateModeIndicator();
+    
+    firebase.auth().onAuthStateChanged(user => {
+        if (user) {
+            updateUIForLoggedInUser();
+        }
+    });
+});
